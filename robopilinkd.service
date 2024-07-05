@@ -1,7 +1,8 @@
 [Unit]
 Description=RoboPiLink connection service
-Wants=pigpiod
+Wants=pigpiod.service
 StartLimitIntervalSec=1
+After=pigpiod.service
 
 [Service]
 Type=simple
