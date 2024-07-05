@@ -1,0 +1,13 @@
+[Unit]
+Description=RoboPiLink connection service
+Wants=pigpiod
+StartLimitIntervalSec=1
+
+[Service]
+Type=simple
+Restart=always
+User=pi
+ExecStart=/usr/bin/env robopilinkd
+
+[Install]
+WantedBy=multi-user.target

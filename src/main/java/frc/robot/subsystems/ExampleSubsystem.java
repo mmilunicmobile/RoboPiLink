@@ -6,10 +6,16 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.robopilink.RPLOutputDigital;
+import frc.robot.Robot;
 
 public class ExampleSubsystem extends SubsystemBase {
   /** Creates a new ExampleSubsystem. */
-  public ExampleSubsystem() {}
+  private RPLOutputDigital output = new RPLOutputDigital(Robot.m_roboPiLink,17);
+
+  public ExampleSubsystem() {
+    setDefaultCommand(exampleMethodCommand());
+  }
 
   /**
    * Example command factory method.
@@ -19,9 +25,9 @@ public class ExampleSubsystem extends SubsystemBase {
   public Command exampleMethodCommand() {
     // Inline construction of command goes here.
     // Subsystem::RunOnce implicitly requires `this` subsystem.
-    return runOnce(
+    return run(
         () -> {
-          /* one-time action goes here */
+          output.setOn();
         });
   }
 

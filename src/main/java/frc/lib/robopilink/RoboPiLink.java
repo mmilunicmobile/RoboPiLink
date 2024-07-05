@@ -56,6 +56,8 @@ public class RoboPiLink {
         new Thread(pythonPrinter()).start();
         new Thread(pythonSender()).start();
 
+        m_devicePorts.add(2);
+
         startPigpiodComs();
     }
 
@@ -112,9 +114,27 @@ public class RoboPiLink {
         //
         sendCommand(
         """
+        ping_pin = gpiozero.LED(2, pin_factory=factory)
+        ping_pin.on()
+        ping_pin.off()
 
         """);
         block();
+
+        new Thread(pinger()).start();
+    }
+
+    private Runnable pinger() {
+        return () -> {
+            while (true) {
+                try {
+                    sendCommand("ping_pin.toggle()\n");
+                    Thread.sleep(100);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
     }
 
     private Runnable mainLoop() {

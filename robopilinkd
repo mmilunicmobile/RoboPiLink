@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+
+# basically this is a pigpio watchdog that shuts off all pins 
+# (puts them on input with no pull resistor) if it doesnt see a change to pin 2 for
+# 200ms. The robot program should basically ping pin 2 pretty frequently to let the
+# watchdog know that the robot program is still running.
+import pigpio
+import sys
+import signal
+
+pin = 2 #int(sys.argv[1])
+timeout = 200# int(sys.argv[2])
+
+pi = pigpio.pi()
+
+def callback(gpio, level, tick):
+    if level == 2:
+        print("watxhdog triggered")
+        shutoffAllPins()
+
+def shutoffAllPins():
+    for i in range(0, 56):
+        try:
+            pi.set_mode(i, pigpio.INPUT)
+            pi.set_pull_up_down(i, pigpio.PUD_OFF)
+        except:
+            pass
+
+pi.callback(2, pigpio.EITHER_EDGE, callback)
+pi.set_watchdog(pin, timeout)
+
+signal.pause()
