@@ -11,7 +11,6 @@ import frc.robot.Robot;
 
 public class ExampleSubsystem extends SubsystemBase {
   /** Creates a new ExampleSubsystem. */
-  private RPLOutputDigital output = new RPLOutputDigital(Robot.m_roboPiLink,17);
 
   public ExampleSubsystem() {
     setDefaultCommand(exampleMethodCommand());
@@ -27,7 +26,6 @@ public class ExampleSubsystem extends SubsystemBase {
     // Subsystem::RunOnce implicitly requires `this` subsystem.
     return run(
         () -> {
-          output.setOn();
         });
   }
 
