@@ -68,7 +68,7 @@ This program can also be found in [this file](robopilinkd).
 Get this program onto the RaspberryPi in an easily executable location. A home directory works very well for this. 
 
 Installing the watchdog script can be done in a few ways, including but not limited to
-* using [wget](https://phoenixnap.com/kb/wget-command-with-examples) and running ```wget https://raw.githubusercontent.com/mmilunicmobile/RoboPiLib/main/robopilinkd```
+* using [wget](https://phoenixnap.com/kb/wget-command-with-examples) and running ```wget https://raw.githubusercontent.com/mmilunicmobile/RoboPiLink/main/robopilinkd```
 * using [scp](https://www.geeksforgeeks.org/scp-command-in-linux-with-examples/) to copy the file
 * copy and pasting the contents of the file from above or the file into a file on the RaspberryPi
 
