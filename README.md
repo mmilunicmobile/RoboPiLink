@@ -128,7 +128,7 @@ A quick example is included below.
 ```java
 //Robot Container Constructor
 // Create a servo motor output on port 5
-RPIOutputServo driveMotor = new RPIOutputServo(Robot.m_roboPiLink, 5);
+RPLOutputServo driveMotor = new RPIOutputServo(Robot.m_roboPiLink, 5);
 
 // ...
 
