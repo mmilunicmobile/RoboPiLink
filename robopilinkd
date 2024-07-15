@@ -8,14 +8,14 @@ import pigpio
 import sys
 import signal
 
-pin = 2 #int(sys.argv[1])
-timeout = 200# int(sys.argv[2])
+pin = 2
+timeout = 200
 
 pi = pigpio.pi()
 
 def callback(gpio, level, tick):
     if level == 2:
-        print("watxhdog triggered")
+        print("RoboPiLink watchdog triggered!")
         shutoffAllPins()
 
 def shutoffAllPins():
