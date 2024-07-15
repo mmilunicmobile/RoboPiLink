@@ -2,6 +2,9 @@
 
 This is a base WPILib project that can interface with **any** Raspberry Pi over a network connection!
 
+![Logo](https://github.com/user-attachments/assets/099c9651-5aac-41bd-bd3d-5a77cc09ec8d)
+
+
 ### Why would I use this?
 If you have excess Raspberry Pis you can use them as a platform to teach WPILib on! This creates a similar avenue to that of the Romi and XRP, but accessible to any Raspberry Pi.
 
