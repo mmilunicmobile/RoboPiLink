@@ -114,6 +114,12 @@ public class RoboPiLink {
         //
         sendCommand(
         """
+        try:
+            print(factory)
+        except Exception as e:
+            print("\\nPRINT:Failed to start pigpiod factory")
+            print("\\nERROR:Failed to start pigpiod factory")
+        
         ping_pin = gpiozero.LED(2, pin_factory=factory)
         ping_pin.on()
         ping_pin.off()
@@ -196,8 +202,14 @@ public class RoboPiLink {
                 } else if (line.startsWith("PRINT")){
                     String[] parts = line.split(":");
                     System.out.println(parts[1]);
+                } else if (line.startsWith("ERROR")){
+                    String[] parts = line.split(":");
+                    throw new RuntimeException(parts[1]);
                 }
             } catch (Exception e) {
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                }
                 System.out.println(e);
             }
             } catch (IOException e) {

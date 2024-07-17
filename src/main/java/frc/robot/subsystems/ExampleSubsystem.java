@@ -4,9 +4,12 @@
 
 package frc.robot.subsystems;
 
+import java.util.OptionalDouble;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.robopilink.RPLOutputDigital;
+import frc.lib.robopilink.RPLOutputServo;
 import frc.robot.Robot;
 
 public class ExampleSubsystem extends SubsystemBase {
@@ -14,6 +17,23 @@ public class ExampleSubsystem extends SubsystemBase {
 
   public ExampleSubsystem() {
     setDefaultCommand(exampleMethodCommand());
+
+    //Robot Container Constructor
+// Create a servo motor output on port 5
+    RPLOutputServo driveMotor = new RPLOutputServo(Robot.m_roboPiLink, 5);
+
+// ...
+
+// somewhere in robot periodic or a command or a subsystem
+// Set the motor to go forwards at full output
+driveMotor.setValue(OptionalDouble.of(1.0));
+
+// Set the drive motor to coast/brake
+driveMotor.setValue(OptionalDouble.empty());
+
+// Gets the state of the drive motor
+OptionalDouble value = driveMotor.getValue();
+
   }
 
   /**

@@ -7,8 +7,8 @@ After=pigpiod.service
 [Service]
 Type=simple
 Restart=always
-User=pi
 ExecStart=/usr/bin/env robopilinkd
+ExecStop=/bin/systemctl kill robopilinkd
 
 [Install]
 WantedBy=multi-user.target

@@ -7,6 +7,8 @@
 import pigpio
 import sys
 import signal
+#import subprocess
+#subprocess.check_call(["sudo", "pigpiod"])
 
 pin = 2
 timeout = 200

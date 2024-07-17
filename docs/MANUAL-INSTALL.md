@@ -1,17 +1,4 @@
-# RoboPiLink
-
-This is a base WPILib project that can interface with **any** Raspberry Pi over a network connection!
-
-![Logo](https://github.com/user-attachments/assets/099c9651-5aac-41bd-bd3d-5a77cc09ec8d)
-
-
-### Why would I use this?
-If you have excess Raspberry Pis you can use them as a platform to teach WPILib on! This creates a similar avenue to that of the Romi and XRP, but accessible to any Raspberry Pi.
-
-An example would be creating a few minibots for a STEM Day using some spare Raspberry Pi 1s and some old Robot Radios. They can then each have code written with WPILib run on them and can also be controlled from the computer with the code running.
-
-> [!NOTE]
-> This project is in early development. Please read through the warnings and acknowledge the license before doing anything.
+# How to manually install.
 
 RoboPiLink has three main components:
 * The WPILib Project (where any code you write would go)
@@ -22,26 +9,6 @@ The WPILib Project is everything in the repository except `robopilinkd` and `rob
 
 All new classes for RoboPiLink are in the [`lib/robopilink`](src/main/java/frc/lib/robopilink/) directory.
 
-# How to Use!
-
-## Manual Install
-
-Follow [these directions](docs/MANUAL-INSTALL.md) to manually install.
-
-
-## Script Install
-
-Clone this repository into the directory you want your robot project to be in. 
-
-You can do this using git like this:
-```
-git clone https://github.com/mmilunicmobile/RoboPiLink.git
-```
-
-Then run 
-```
-python3 rplsetup.py "raspberrypi"
-```
 ## Raspberry Pi Setup
 
 ### 1. Install the Watchdog Script
