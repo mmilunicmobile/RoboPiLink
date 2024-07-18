@@ -3,8 +3,6 @@ package frc.lib.robopilink;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
@@ -38,20 +36,30 @@ public class RoboPiLink {
         this.m_host = host;
         this.m_isSimulation =simulate;
 
-        ProcessBuilder processBuilder = new ProcessBuilder("python3", "-i");
-
-        processBuilder.redirectErrorStream(true);
+        ProcessBuilder processBuilder;
 
         try {
-        m_pythonProcess = processBuilder.start();
-        System.out.println("python process started");
+            processBuilder = new ProcessBuilder("python3", "-i");
+            processBuilder.redirectErrorStream(true);
+            m_pythonProcess = processBuilder.start();
         } catch (IOException e) {
-        throw new RuntimeException("python process failed to start", e);
+            try {
+                System.out.println("Trying windows");
+                processBuilder = new ProcessBuilder("cmd", "/c", "python3",  "-i");
+                processBuilder.redirectErrorStream(false);
+                m_pythonProcess = processBuilder.start();
+                // m_pythonProcess = Runtime.getRuntime().exec("cmd /c python3 -i");
+            } catch (IOException f) {
+                throw new RuntimeException("python process failed to start" + f.toString());
+            }
         }
+        
+        System.out.println("python process started");
 
-        m_pythonProcessInput = new BufferedReader(new InputStreamReader(m_pythonProcess.getInputStream()));
 
-        m_pythonProcessOutput = new BufferedWriter(new OutputStreamWriter(m_pythonProcess.getOutputStream()));
+        m_pythonProcessInput = m_pythonProcess.inputReader();
+
+        m_pythonProcessOutput = m_pythonProcess.outputWriter();
 
         new Thread(pythonPrinter()).start();
         new Thread(pythonSender()).start();
@@ -94,7 +102,7 @@ public class RoboPiLink {
 
         def enable():
             #print("\\nEnabling")
-            os.system('say I am Enabling! &')
+            #os.system('say I am Enabling! &')
             for call in enable_calls:
                 call()
         
@@ -190,8 +198,11 @@ public class RoboPiLink {
         String line;
             while (true) {
             try {
+            if (!m_pythonProcessInput.ready()) continue;
+
             line = m_pythonProcessInput.readLine();
-            //System.out.println(line);
+            //System.out.println(m_pythonProcess.isAlive());
+            //if (line == null) continue;
             try {
                 if (line.startsWith(OUTPUT_KEY)) {
                     String[] parts = line.split(":");

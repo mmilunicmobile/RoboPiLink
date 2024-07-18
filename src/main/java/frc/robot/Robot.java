@@ -32,7 +32,7 @@ public class Robot extends TimedRobot {
   public void robotInit() {
 
     // Set wether to try connecting with an actual RaspberryPi or simulated RaspberryPi
-    boolean isSimulation = false;
+    boolean isSimulation = true;
 
     // Instantiate robot python interface
     m_roboPiLink = new RoboPiLink("raspberrypi", isSimulation);
