@@ -1,9 +1,11 @@
 package frc.lib.robopilink;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
-public class RPLOutputPWM implements PythonDevice {
-    String variableName;
+import uk.pigpioj.PigpioInterface;
+
+public class RPLOutputPWM implements PigpiojDevice {
     RoboPiLink pythonInterface;
     int port;
     double commandedValue = 0.0;
@@ -12,28 +14,30 @@ public class RPLOutputPWM implements PythonDevice {
     public RPLOutputPWM(RoboPiLink pythonInterface, int port) {
         this.port = port;
         this.pythonInterface = pythonInterface;
-        this.variableName = "PWM" + port;
 
         if (pythonInterface.isPortTaken(port)) {
             throw new RuntimeException("port " + port + " is already in use on RPi");
         }
         
         pythonInterface.sendCommand(
+            () -> {
+                
+            }
             variableName + " = gpiozero.PWMLED(" + port + ", pin_factory=factory)\n" +
             variableName + ".value = 0\n"
         );
 
-        pythonInterface.block();
-
         pythonInterface.registerDevice(this);
+
+        pythonInterface.block();
     }
 
-    public Optional<String> getDisabledInit() {
+    public Consumer<PigpioInterface> getDisabledInit() {
         return getSendValueString(0);
     }
 
-    public Optional<String> getEnabledPeriodic() {
-        if (lastSentValue == commandedValue) return Optional.empty();
+    public Consumer<PigpioInterface> getEnabledPeriodic() {
+        if (lastSentValue == commandedValue) return (i) ->{};
         return getSendValueString(commandedValue);
     }
 
@@ -57,8 +61,10 @@ public class RPLOutputPWM implements PythonDevice {
         return port;
     }
 
-    private Optional<String> getSendValueString(double value) {
+    private Consumer<PigpioInterface> getSendValueString(double value) {
         lastSentValue = value;
-        return Optional.of(variableName + ".value = " + value);
+        return (i) -> {
+            i.setPWMDutyCycle(port, (int) (255 * value));
+        };
     }
 }

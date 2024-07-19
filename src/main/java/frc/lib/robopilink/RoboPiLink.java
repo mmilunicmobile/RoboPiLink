@@ -1,72 +1,37 @@
 package frc.lib.robopilink;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 import edu.wpi.first.wpilibj.DriverStation;
+import uk.pigpioj.PigpioInterface;
+import uk.pigpioj.PigpioJ;
 
 public class RoboPiLink {
-    public final String OUTPUT_KEY = "DATATRANSFER";
+    private PigpioInterface m_pigpioInterface;
 
-    private Process m_pythonProcess;
-
-    private BufferedReader m_pythonProcessInput;
-
-    private BufferedWriter m_pythonProcessOutput;
-
-    private Map<String, Double> m_variableMap = new ConcurrentHashMap<String, Double>();
-
-    private CopyOnWriteArrayList<PythonDevice> m_devices = new CopyOnWriteArrayList<PythonDevice>();
+    private CopyOnWriteArrayList<PigpiojDevice> m_devices = new CopyOnWriteArrayList<PigpiojDevice>();
 
     private CopyOnWriteArrayList<Integer> m_devicePorts = new CopyOnWriteArrayList<Integer>();
 
-    private Queue<String> m_commandQueue = new ConcurrentLinkedQueue<String>();
+    private Queue<Consumer<PigpioInterface>> m_commandQueue = new ConcurrentLinkedQueue<>();
 
     private String m_host;
     private boolean m_isSimulation;
 
     public RoboPiLink(String host, boolean simulate) {
-        this.m_host = host;
-        this.m_isSimulation =simulate;
+        m_host = host;
+        m_isSimulation = simulate;
 
-        ProcessBuilder processBuilder;
+        m_pigpioInterface = PigpioJ.newSocketImplementation(m_host);
 
-        try {
-            processBuilder = new ProcessBuilder("python3", "-i");
-            processBuilder.redirectErrorStream(true);
-            m_pythonProcess = processBuilder.start();
-        } catch (IOException e) {
-            try {
-                System.out.println("Trying windows");
-                processBuilder = new ProcessBuilder("cmd", "/c", "python3",  "-i");
-                processBuilder.redirectErrorStream(false);
-                m_pythonProcess = processBuilder.start();
-                // m_pythonProcess = Runtime.getRuntime().exec("cmd /c python3 -i");
-            } catch (IOException f) {
-                throw new RuntimeException("python process failed to start" + f.toString());
-            }
-        }
-        
-        System.out.println("python process started");
-
-
-        m_pythonProcessInput = m_pythonProcess.inputReader();
-
-        m_pythonProcessOutput = m_pythonProcess.outputWriter();
-
-        new Thread(pythonPrinter()).start();
-        new Thread(pythonSender()).start();
+        new Thread(commandRunner()).start();
 
         m_devicePorts.add(2);
 
-        startPigpiodComs();
+        new Thread(pinger()).start();
     }
 
     public void startMainLoop() {
@@ -81,68 +46,13 @@ public class RoboPiLink {
         return m_isSimulation;
     }
 
-
-    public void startPigpiodComs() {
-        sendCommand(
-        """
-        import gpiozero
-        from gpiozero.pins.pigpio import PiGPIOFactory
-        from gpiozero.pins.mock import MockFactory, MockPWMPin
-        #import os
-        #os.system('say I am booting up! &')
-
-        disable_calls = []
-
-        def disable():
-            #print("\\nDisabling")
-            for call in disable_calls:
-                call()
-        
-        enable_calls = []
-
-        def enable():
-            #print("\\nEnabling")
-            #os.system('say I am Enabling! &')
-            for call in enable_calls:
-                call()
-        
-        logging_calls = []
-
-        def logger():
-            for call in logging_calls:
-                call()
-        
-        """);
-        //sendCommand("factory = PiGPIOFactory(host='" + host + "')\n");
-        if (m_isSimulation) {
-            sendCommand("factory = MockFactory(pin_class=MockPWMPin)\n");
-        } else {
-            sendCommand("factory = PiGPIOFactory(host='" + m_host + "')\n");
-        }
-        //
-        sendCommand(
-        """
-        try:
-            print(factory)
-        except Exception as e:
-            print("\\nPRINT:Failed to start pigpiod factory")
-            print("\\nERROR:Failed to start pigpiod factory")
-        
-        ping_pin = gpiozero.LED(2, pin_factory=factory)
-        ping_pin.on()
-        ping_pin.off()
-
-        """);
-        block();
-
-        new Thread(pinger()).start();
-    }
-
     private Runnable pinger() {
         return () -> {
             while (true) {
                 try {
-                    sendCommand("ping_pin.toggle()\n");
+                    sendCommand((PigpioInterface i) -> i.write(2, true));
+                    Thread.sleep(100);
+                    sendCommand((PigpioInterface i) -> i.write(2, false));
                     Thread.sleep(100);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -182,76 +92,23 @@ public class RoboPiLink {
         };
     }
 
-    public void block() {
-        sendCommand("print(\"\\n" + OUTPUT_KEY + ":blocking:1\")\n");
-        while (getValue("blocking") == 0) {}
-        sendCommand("print(\"\\n" + OUTPUT_KEY + ":blocking:0\")\n");
-        while (getValue("blocking") == 1) {}
-    }
-
     public boolean isPortTaken(int port) {
         return m_devicePorts.contains(port);
     }
 
-    private Runnable pythonPrinter() {
-        return () -> {
-        String line;
-            while (true) {
-            try {
-            if (!m_pythonProcessInput.ready()) continue;
-
-            line = m_pythonProcessInput.readLine();
-            //System.out.println(m_pythonProcess.isAlive());
-            //if (line == null) continue;
-            try {
-                if (line.startsWith(OUTPUT_KEY)) {
-                    String[] parts = line.split(":");
-                    if (parts[2].equals("None")) {
-                        parts[2] = "0.0";
-                    }
-                    m_variableMap.put(parts[1], Double.parseDouble(parts[2]));
-                } else if (line.startsWith("PRINT")){
-                    String[] parts = line.split(":");
-                    System.out.println(parts[1]);
-                } else if (line.startsWith("ERROR")){
-                    String[] parts = line.split(":");
-                    throw new RuntimeException(parts[1]);
-                }
-            } catch (Exception e) {
-                if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
-                }
-                System.out.println(e);
-            }
-            } catch (IOException e) {
-            throw new RuntimeException("python process failed to read", e);
-            }
-        }
-    };
-  }
-
-  private Runnable pythonSender() {
+  private Runnable commandRunner() {
     return () -> {
         while (true) {
-          try {
-            String command = m_commandQueue.poll();
+            Consumer<PigpioInterface> command = m_commandQueue.poll();
             if (command != null) {
                 sendCommandLocal(command);
             }
-                  } catch (RuntimeException e) {
-        throw new RuntimeException("python process failed to write", e);
-      }
         }
     };
   }
 
-  private void sendCommandLocal(String command) {
-    try {
-        m_pythonProcessOutput.write(command);
-        m_pythonProcessOutput.flush();
-        } catch (IOException e) {
-        throw new RuntimeException("python process failed to write", e);
-        }
+  private void sendCommandLocal(Consumer<PigpioInterface> command) {
+        command.accept(m_pigpioInterface);
     }
 
   /**
@@ -260,67 +117,39 @@ public class RoboPiLink {
    * explicitly sends the string sent in. a '\n' at the end of the command is usually needed.
    * @param command
    */
-  public void sendCommand(String command) {
-    m_commandQueue.add(command + "\n");
-  }
-  /**
-   * gets a value from the python process sent out using the data transfer key and method
-   * @param value
-   * @return
-   */
-  public double getValue(String value) {
-      Double result = m_variableMap.get(value);
-      if (result == null) {
-        return 0.0;
-      }
-      return result;
+  public void sendCommand(Consumer<PigpioInterface> command) {
+    m_commandQueue.add(command);
   }
 
   private void enabledInit() {
-    for (PythonDevice device : m_devices) {
-        Optional<String> command = device.getEnabledInit();
-        if (command.isPresent()) {
-            sendCommand(command.get());
-            //System.out.println(command.get());
-            block();
-        }
+    for (PigpiojDevice device : m_devices) {
+        sendCommand(device.getEnabledInit());
     }
   }
 
   private void enabledPeriodic() {
-    for (PythonDevice device : m_devices) {
-        Optional<String> command = device.getEnabledPeriodic();
-        if (command.isPresent()) {
-            sendCommand(command.get());
-            //System.out.println(command.get());
-            block();
-        }
+    for (PigpiojDevice device : m_devices) {
+        sendCommand(device.getEnabledPeriodic());
     }
   }
 
   private void disabledInit() {
-    for (PythonDevice device : m_devices) {
-        Optional<String> command = device.getDisabledInit();
-        if (command.isPresent()) {
-            sendCommand(command.get());
-            //System.out.println(command.get());
-            block();
-        }
+    for (PigpiojDevice device : m_devices) {
+        sendCommand(device.getDisabledInit());
     }
   }
 
   private void disabledPeriodic() {
-    for (PythonDevice device : m_devices) {
-        Optional<String> command = device.getDisabledPeriodic();
-        if (command.isPresent()) {
-            sendCommand(command.get());
-            //System.out.println(command.get());
-            block();
-        }
+    for (PigpiojDevice device : m_devices) {
+        sendCommand(device.getDisabledPeriodic());
     }
   }
 
-  public void registerDevice(PythonDevice device) {
+  public void registerDevice(PigpiojDevice device) {
     m_devices.add(device);
+  }
+
+  public void block() {
+    while(!m_commandQueue.isEmpty()) {}
   }
 }

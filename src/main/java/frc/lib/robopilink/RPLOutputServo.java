@@ -3,7 +3,7 @@ package frc.lib.robopilink;
 import java.util.Optional;
 import java.util.OptionalDouble;
 
-public class RPLOutputServo implements PythonDevice {
+public class RPLOutputServo implements PigpiojDevice {
     String variableName;
     RoboPiLink pythonInterface;
     int port;
@@ -24,9 +24,9 @@ public class RPLOutputServo implements PythonDevice {
             variableName + ".value = None\n"
         );
 
-        pythonInterface.block();
-
         pythonInterface.registerDevice(this);
+
+        pythonInterface.block();
     }
 
     public Optional<String> getDisabledInit() {

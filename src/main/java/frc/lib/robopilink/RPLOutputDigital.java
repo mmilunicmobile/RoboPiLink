@@ -1,39 +1,41 @@
 package frc.lib.robopilink;
 
-import java.util.Optional;
 
-public class RPLOutputDigital implements PythonDevice{
-    String variableName;
-    RoboPiLink pythonInterface;
-    int port;
-    boolean commandedValue = false;
-    boolean lastSentValue = false;
+import uk.pigpioj.PigpioConstants;
+import uk.pigpioj.PigpioInterface;
+
+import java.util.function.Consumer;
+
+public class RPLOutputDigital implements PigpiojDevice{
+    private RoboPiLink pythonInterface;
+    private int port;
+    private boolean commandedValue = false;
+    private boolean lastSentValue = false;
 
     public RPLOutputDigital(RoboPiLink pythonInterface, int port) {
         this.port = port;
         this.pythonInterface = pythonInterface;
-        this.variableName = "OUT" + port;
 
         if (pythonInterface.isPortTaken(port)) {
             throw new RuntimeException("port " + port + " is already in use on RPi");
         }
-        
-        pythonInterface.sendCommand(
-            variableName + " = gpiozero.OutputDevice(" + port + ", pin_factory=factory)\n" +
-            variableName + ".value = 0\n"
-        );
 
-        pythonInterface.block();
+        pythonInterface.sendCommand((i) -> {
+            i.setMode(port, PigpioConstants.MODE_PI_OUTPUT);
+            i.write(port, false);
+        });
 
         pythonInterface.registerDevice(this);
+
+        pythonInterface.block();
     }
 
-    public Optional<String> getDisabledInit() {
+    public Consumer<PigpioInterface> getDisabledInit() {
         return getSendValueString(false);
     }
 
-    public Optional<String> getEnabledPeriodic() {
-        if (lastSentValue == commandedValue) return Optional.empty();
+    public Consumer<PigpioInterface> getEnabledPeriodic() {
+        if (lastSentValue == commandedValue) return (i) -> {};
         return getSendValueString(commandedValue);
     }
 
@@ -57,8 +59,10 @@ public class RPLOutputDigital implements PythonDevice{
         return lastSentValue;
     }
 
-    private Optional<String> getSendValueString(boolean value) {
+    private Consumer<PigpioInterface> getSendValueString(boolean value) {
         lastSentValue = value;
-        return Optional.of(variableName + ".value = " + (value ? "1" : "0"));
+        return (i) -> {
+            i.write(port, value);
+        };
     }
 }
