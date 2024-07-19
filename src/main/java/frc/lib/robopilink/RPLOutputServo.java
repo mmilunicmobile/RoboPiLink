@@ -5,6 +5,7 @@ import java.util.OptionalDouble;
 import com.diozero.api.ServoDevice;
 
 public class RPLOutputServo implements PigpiojDevice {
+    @SuppressWarnings("unused")
     private RoboPiLink pythonInterface;
     private int port;
     private OptionalDouble commandedValue = OptionalDouble.of(0.0);
@@ -19,7 +20,7 @@ public class RPLOutputServo implements PigpiojDevice {
             throw new RuntimeException("port " + port + " is already in use on RPi");
         }
 
-        i = new ServoDevice.Builder(port).setInitialPulseWidthUs(0).setFrequency(50).build();
+        i = new ServoDevice.Builder(port).setInitialPulseWidthUs(0).setFrequency(50).setDeviceFactory(pythonInterface.getDeviceFactory()).build();
 
         pythonInterface.registerDevice(this);
     }

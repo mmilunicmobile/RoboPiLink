@@ -32,10 +32,10 @@ public class Robot extends TimedRobot {
   public void robotInit() {
 
     // Set wether to try connecting with an actual RaspberryPi or simulated RaspberryPi
-    boolean isSimulation = true;
+    boolean isSimulation = false;
 
     // Instantiate robot python interface
-    m_roboPiLink = new RoboPiLink("raspberrypi", isSimulation);
+    m_roboPiLink = RoboPiLink.remotePi("raspberrypi", isSimulation);
 
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.

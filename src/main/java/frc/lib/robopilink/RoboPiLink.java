@@ -1,13 +1,15 @@
 package frc.lib.robopilink;
 
+import java.util.OptionalInt;
 import java.util.Queue;
-import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.diozero.api.DigitalOutputDevice;
 import com.diozero.internal.provider.mock.MockDeviceFactory;
 import com.diozero.internal.provider.pigpioj.PigpioJDeviceFactory;
+import com.diozero.internal.spi.BaseNativeDeviceFactory;
+import com.diozero.sbc.BoardPinInfo;
 
 import edu.wpi.first.wpilibj.DriverStation;
 
@@ -21,39 +23,33 @@ public class RoboPiLink {
 
     private DigitalOutputDevice m_ping_pin;
 
+    private BaseNativeDeviceFactory m_deviceFactory;
 
-    private String m_host;
-    private boolean m_isSimulation;
-
-    public RoboPiLink(String host, boolean simulate) {
-        m_host = host;
-        m_isSimulation = simulate;
-
-        if (m_isSimulation) {
-            new MockDeviceFactory();
-        } else {
-            PigpioJDeviceFactory.newSocketInstance(host);
-        }
+    public RoboPiLink(BaseNativeDeviceFactory deviceFactory, OptionalInt pingPin) {
+        m_deviceFactory = deviceFactory;
 
         new Thread(commandRunner()).start();
 
-        m_ping_pin = new DigitalOutputDevice(2);
+        if (pingPin.isPresent()) {
+            m_ping_pin = new DigitalOutputDevice.Builder(pingPin.getAsInt()).setDeviceFactory(m_deviceFactory).build();
+            m_devicePorts.add(pingPin.getAsInt());
+            new Thread(pinger()).start();
+        }
+    }
 
-        m_devicePorts.add(2);
-
-        new Thread(pinger()).start();
+    public static RoboPiLink remotePi(String host, boolean simulate) {
+        if (simulate) {
+            MockDeviceFactory mock = new MockDeviceFactory();
+            BoardPinInfo info = mock.getBoardPinInfo();
+            new MockBoardConfigurator().configure(info);
+            return new RoboPiLink(mock, OptionalInt.empty());
+        } else {
+            return new RoboPiLink(PigpioJDeviceFactory.newSocketInstance(host), OptionalInt.of(2));
+        }
     }
 
     public void startMainLoop() {
         new Thread(mainLoop()).start();
-    }
-
-    public String getHost() {
-        return m_host;
-    }
-
-    public boolean isSimulation() {
-        return m_isSimulation;
     }
 
     private Runnable pinger() {
@@ -160,5 +156,9 @@ public class RoboPiLink {
 
   public void block() {
     while(!m_commandQueue.isEmpty()) {}
+  }
+
+  public BaseNativeDeviceFactory getDeviceFactory() {
+    return m_deviceFactory;
   }
 }
