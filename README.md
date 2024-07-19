@@ -38,7 +38,7 @@ Then run
 ```
 python3 rplsetup.py pi raspberrypi
 ```
-but replace `pi` with the username for your pi and `raspberrypi` with the hostname of your RaspberryPi. This will likely ask for the password to your RaspberryPi as it needs to ssh into it.
+but replace `pi` with the username for your pi and `raspberrypi` with the hostname of your RaspberryPi. This will likely ask for the password to your RaspberryPi as it needs to ssh into it. The RaspberryPi **must** be running Raspbian.
 
 ## Manual Install
 
