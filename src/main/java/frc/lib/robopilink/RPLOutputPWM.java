@@ -19,9 +19,7 @@ public class RPLOutputPWM implements PigpiojDevice {
             throw new RuntimeException("port " + port + " is already in use on RPi");
         }
 
-        i = new PwmOutputDevice(port);
-        
-        i.setValue(0);
+        i = new PwmOutputDevice.Builder(port).setDeviceFactory(pythonInterface.getDeviceFactory()).setInitialValue(0.0f).build();
 
         pythonInterface.registerDevice(this);
     }
@@ -58,7 +56,7 @@ public class RPLOutputPWM implements PigpiojDevice {
     private Runnable getSendValueString(double value) {
         lastSentValue = value;
         return () -> {
-            i.setValue(0);
+            i.setValue((float) value);
         };
     }
 }

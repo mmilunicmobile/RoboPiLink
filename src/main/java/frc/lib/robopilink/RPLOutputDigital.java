@@ -1,11 +1,5 @@
 package frc.lib.robopilink;
 
-
-import uk.pigpioj.PigpioConstants;
-import uk.pigpioj.PigpioInterface;
-
-import java.util.function.Consumer;
-
 import com.diozero.api.DigitalOutputDevice;
 
 public class RPLOutputDigital implements PigpiojDevice {
@@ -23,9 +17,10 @@ public class RPLOutputDigital implements PigpiojDevice {
             throw new RuntimeException("port " + port + " is already in use on RPi");
         }
 
-        i = new DigitalOutputDevice(port);
-
-        i.setValue(false);
+        i = new DigitalOutputDevice.Builder(port)
+            .setDeviceFactory(pythonInterface.getDeviceFactory())
+            .setInitialValue(false)
+            .build();
 
         pythonInterface.registerDevice(this);
     }
