@@ -15,6 +15,10 @@ public class RPLInputDigital implements PigpiojDevice {
         this(pythonInterface, port, GpioPullUpDown.PULL_UP);
     }
 
+    public RPLInputDigital(RoboPiLink pythonInterface, int port, boolean pullUp) {
+        this(pythonInterface, port, pullUp ? GpioPullUpDown.PULL_UP : GpioPullUpDown.PULL_DOWN);
+    }
+
     public RPLInputDigital(RoboPiLink pythonInterface, int port, GpioPullUpDown pullUpDown) {
         this.port = port;
         this.pythonInterface = pythonInterface;
