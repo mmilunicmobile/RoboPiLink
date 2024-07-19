@@ -1,11 +1,11 @@
 from sys import argv, executable
 from subprocess import check_call
 
-if len(argv) == 1:
-    print("Installing pigpio and gpiozero via pip...")
-    check_call([executable, "-m", "pip", "install", "--upgrade", "pigpio", "gpiozero"])
-    print("Finished installing pigpio and gpiozero.")
-    exit(0)
+# if len(argv) == 1:
+#     print("Installing pigpio and gpiozero via pip...")
+#     check_call([executable, "-m", "pip", "install", "--upgrade", "pigpio", "gpiozero"])
+#     print("Finished installing pigpio and gpiozero.")
+#     exit(0)
 
 if len(argv) != 3:
     print("Please specify the user and name of the Raspberry Pi: python3 rplsetup.py [USER_NAME] [RASPBERRYPI_HOSTNAME]\n\
