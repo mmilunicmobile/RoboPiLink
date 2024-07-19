@@ -1,29 +1,34 @@
 package frc.lib.robopilink;
 
-import java.util.Optional;
+import com.diozero.api.DigitalInputDevice;
+import com.diozero.api.GpioPullUpDown;
 
-public class RPLInputDigital implements PythonDevice {
-    String variableName;
-    RoboPiLink pythonInterface;
-    int port;
-    boolean pullUp;
+public class RPLInputDigital implements PigpiojDevice {
+    @SuppressWarnings("unused")
+    private RoboPiLink pythonInterface;
+    private int port;
+    private GpioPullUpDown pullUp;
+    private boolean value = false;
+    private DigitalInputDevice i;
+
+    public RPLInputDigital(RoboPiLink pythonInterface, int port) {
+        this(pythonInterface, port, GpioPullUpDown.PULL_UP);
+    }
 
     public RPLInputDigital(RoboPiLink pythonInterface, int port, boolean pullUp) {
+        this(pythonInterface, port, pullUp ? GpioPullUpDown.PULL_UP : GpioPullUpDown.PULL_DOWN);
+    }
+
+    public RPLInputDigital(RoboPiLink pythonInterface, int port, GpioPullUpDown pullUpDown) {
         this.port = port;
         this.pythonInterface = pythonInterface;
-        this.variableName = "INPUT" + port;
-        this.pullUp = pullUp;
+        this.pullUp = pullUpDown;
 
         if (pythonInterface.isPortTaken(port)) {
             throw new RuntimeException("port " + port + " is already in use on RPi");
         }
-        
-        pythonInterface.sendCommand(
-            variableName + " = gpiozero.InputDevice(" + port + ", pin_factory=factory)\n" +
-            variableName + ".pull_up = " + (pullUp ? "True" : "False") + "\n"
-        );
 
-        pythonInterface.block();
+        i = new DigitalInputDevice.Builder(port).setPullUpDown(pullUp).setDeviceFactory(pythonInterface.getDeviceFactory()).build();
 
         pythonInterface.registerDevice(this);
     }
@@ -33,18 +38,24 @@ public class RPLInputDigital implements PythonDevice {
     }
 
     public boolean getValue() {
-        return pythonInterface.getValue(variableName) == 1.0;
+        return value;
     }
 
-    private Optional<String> getLoggingPeriodic() {
-        return Optional.of("print('\\n" + pythonInterface.OUTPUT_KEY + ":" + variableName + ":' + str(" + variableName + ".value))");
+    private Runnable getLoggingPeriodic() {
+        return () -> {
+            value = i.getValue();
+        };
     }
 
-    public Optional<String> getDisabledPeriodic() {
+    public Runnable getDisabledPeriodic() {
         return getLoggingPeriodic();
     }
 
-    public Optional<String> getEnabledPeriodic() {
+    public Runnable getEnabledPeriodic() {
         return getLoggingPeriodic();
+    }
+
+    public GpioPullUpDown getPullUpDown() {
+        return pullUp;
     }
 }

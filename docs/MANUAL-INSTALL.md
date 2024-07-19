@@ -63,11 +63,6 @@ Installing the watchdog script can be done in a few ways, including but not limi
 
 Use git to clone the code in this repository and open it in WPILib VSCode.
 
-### 2. Install gpiozero and pigpio
-Make sure that the computer you are running on has an installation of Python3 and also has gpiozero and pigpio installed as Python3 modules. 
-
-To do the second part with pip, you can run `python3 -m pip install -u gpiozero pigpio`.
-
 ### 3. Change Hostname
 `Robot.java` should have a `robotInit()` method which looks like this:
 ```java
@@ -78,7 +73,7 @@ To do the second part with pip, you can run `python3 -m pip install -u gpiozero 
     boolean isSimulation = false;
 
     // Instantiate robot python interface
-    m_roboPiLink = new RoboPiLink("raspberrypi", isSimulation);
+    m_roboPiLink = RoboPiLink.remotePi("raspberrypi", isSimulation);
 
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
@@ -90,7 +85,7 @@ To do the second part with pip, you can run `python3 -m pip install -u gpiozero 
   }
 ```
 
-Make sure that `"raspberrypi"` in the `RoboPiLink` creation is the hostname/local IP address of your Raspberry Pi. (By default this is `raspberrypi` hence the default.)
+Make sure that `"raspberrypi"` in the `RoboPiLink.remotePi()` call is the hostname/local IP address of your Raspberry Pi. (By default this is `raspberrypi` hence the default.)
 
 ## Write Code
 

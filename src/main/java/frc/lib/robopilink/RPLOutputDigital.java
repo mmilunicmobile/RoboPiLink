@@ -1,39 +1,37 @@
 package frc.lib.robopilink;
 
-import java.util.Optional;
+import com.diozero.api.DigitalOutputDevice;
 
-public class RPLOutputDigital implements PythonDevice{
-    String variableName;
-    RoboPiLink pythonInterface;
-    int port;
-    boolean commandedValue = false;
-    boolean lastSentValue = false;
+public class RPLOutputDigital implements PigpiojDevice {
+    @SuppressWarnings("unused")
+    private RoboPiLink pythonInterface;
+    private int port;
+    private boolean commandedValue = false;
+    private boolean lastSentValue = false;
+    private DigitalOutputDevice i;
 
     public RPLOutputDigital(RoboPiLink pythonInterface, int port) {
         this.port = port;
         this.pythonInterface = pythonInterface;
-        this.variableName = "OUT" + port;
 
         if (pythonInterface.isPortTaken(port)) {
             throw new RuntimeException("port " + port + " is already in use on RPi");
         }
-        
-        pythonInterface.sendCommand(
-            variableName + " = gpiozero.OutputDevice(" + port + ", pin_factory=factory)\n" +
-            variableName + ".value = 0\n"
-        );
 
-        pythonInterface.block();
+        i = new DigitalOutputDevice.Builder(port)
+            .setDeviceFactory(pythonInterface.getDeviceFactory())
+            .setInitialValue(false)
+            .build();
 
         pythonInterface.registerDevice(this);
     }
 
-    public Optional<String> getDisabledInit() {
+    public Runnable getDisabledInit() {
         return getSendValueString(false);
     }
 
-    public Optional<String> getEnabledPeriodic() {
-        if (lastSentValue == commandedValue) return Optional.empty();
+    public Runnable getEnabledPeriodic() {
+        if (lastSentValue == commandedValue) return () -> {};
         return getSendValueString(commandedValue);
     }
 
@@ -57,8 +55,10 @@ public class RPLOutputDigital implements PythonDevice{
         return lastSentValue;
     }
 
-    private Optional<String> getSendValueString(boolean value) {
+    private Runnable getSendValueString(boolean value) {
         lastSentValue = value;
-        return Optional.of(variableName + ".value = " + (value ? "1" : "0"));
+        return () -> {
+            i.setValue(value);
+        };
     }
 }

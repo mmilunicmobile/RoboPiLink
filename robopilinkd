@@ -5,10 +5,7 @@
 # 200ms. The robot program should basically ping pin 2 pretty frequently to let the
 # watchdog know that the robot program is still running.
 import pigpio
-import sys
 import signal
-#import subprocess
-#subprocess.check_call(["sudo", "pigpiod"])
 
 pin = 2
 timeout = 200

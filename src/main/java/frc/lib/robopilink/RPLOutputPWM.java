@@ -1,39 +1,36 @@
 package frc.lib.robopilink;
 
-import java.util.Optional;
 
-public class RPLOutputPWM implements PythonDevice {
-    String variableName;
-    RoboPiLink pythonInterface;
-    int port;
-    double commandedValue = 0.0;
-    double lastSentValue = 0.0;
+import com.diozero.api.PwmOutputDevice;
+
+
+public class RPLOutputPWM implements PigpiojDevice {
+    @SuppressWarnings("unused")
+    private RoboPiLink pythonInterface;
+    private int port;
+    private double commandedValue = 0.0;
+    private double lastSentValue = 0.0;
+    private PwmOutputDevice i;
 
     public RPLOutputPWM(RoboPiLink pythonInterface, int port) {
         this.port = port;
         this.pythonInterface = pythonInterface;
-        this.variableName = "PWM" + port;
 
         if (pythonInterface.isPortTaken(port)) {
             throw new RuntimeException("port " + port + " is already in use on RPi");
         }
-        
-        pythonInterface.sendCommand(
-            variableName + " = gpiozero.PWMLED(" + port + ", pin_factory=factory)\n" +
-            variableName + ".value = 0\n"
-        );
 
-        pythonInterface.block();
+        i = new PwmOutputDevice.Builder(port).setDeviceFactory(pythonInterface.getDeviceFactory()).setInitialValue(0.0f).build();
 
         pythonInterface.registerDevice(this);
     }
 
-    public Optional<String> getDisabledInit() {
+    public Runnable getDisabledInit() {
         return getSendValueString(0);
     }
 
-    public Optional<String> getEnabledPeriodic() {
-        if (lastSentValue == commandedValue) return Optional.empty();
+    public Runnable getEnabledPeriodic() {
+        if (lastSentValue == commandedValue) return () ->{};
         return getSendValueString(commandedValue);
     }
 
@@ -57,8 +54,10 @@ public class RPLOutputPWM implements PythonDevice {
         return port;
     }
 
-    private Optional<String> getSendValueString(double value) {
+    private Runnable getSendValueString(double value) {
         lastSentValue = value;
-        return Optional.of(variableName + ".value = " + value);
+        return () -> {
+            i.setValue((float) value);
+        };
     }
 }
