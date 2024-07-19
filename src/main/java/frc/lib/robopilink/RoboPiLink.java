@@ -1,22 +1,26 @@
 package frc.lib.robopilink;
 
 import java.util.Queue;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
+
+import com.diozero.api.DigitalOutputDevice;
+import com.diozero.internal.provider.mock.MockDeviceFactory;
+import com.diozero.internal.provider.pigpioj.PigpioJDeviceFactory;
 
 import edu.wpi.first.wpilibj.DriverStation;
-import uk.pigpioj.PigpioInterface;
-import uk.pigpioj.PigpioJ;
 
 public class RoboPiLink {
-    private PigpioInterface m_pigpioInterface;
 
     private CopyOnWriteArrayList<PigpiojDevice> m_devices = new CopyOnWriteArrayList<PigpiojDevice>();
 
     private CopyOnWriteArrayList<Integer> m_devicePorts = new CopyOnWriteArrayList<Integer>();
 
-    private Queue<Consumer<PigpioInterface>> m_commandQueue = new ConcurrentLinkedQueue<>();
+    private Queue<Runnable> m_commandQueue = new ConcurrentLinkedQueue<>();
+
+    private DigitalOutputDevice m_ping_pin;
+
 
     private String m_host;
     private boolean m_isSimulation;
@@ -25,9 +29,15 @@ public class RoboPiLink {
         m_host = host;
         m_isSimulation = simulate;
 
-        m_pigpioInterface = PigpioJ.newSocketImplementation(m_host);
+        if (m_isSimulation) {
+            new MockDeviceFactory();
+        } else {
+            PigpioJDeviceFactory.newSocketInstance(host);
+        }
 
         new Thread(commandRunner()).start();
+
+        m_ping_pin = new DigitalOutputDevice(2);
 
         m_devicePorts.add(2);
 
@@ -50,9 +60,7 @@ public class RoboPiLink {
         return () -> {
             while (true) {
                 try {
-                    sendCommand((PigpioInterface i) -> i.write(2, true));
-                    Thread.sleep(100);
-                    sendCommand((PigpioInterface i) -> i.write(2, false));
+                    sendCommand(() -> m_ping_pin.toggle());
                     Thread.sleep(100);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -99,7 +107,7 @@ public class RoboPiLink {
   private Runnable commandRunner() {
     return () -> {
         while (true) {
-            Consumer<PigpioInterface> command = m_commandQueue.poll();
+            Runnable command = m_commandQueue.poll();
             if (command != null) {
                 sendCommandLocal(command);
             }
@@ -107,8 +115,8 @@ public class RoboPiLink {
     };
   }
 
-  private void sendCommandLocal(Consumer<PigpioInterface> command) {
-        command.accept(m_pigpioInterface);
+  private void sendCommandLocal(Runnable command) {
+        command.run();
     }
 
   /**
@@ -117,8 +125,9 @@ public class RoboPiLink {
    * explicitly sends the string sent in. a '\n' at the end of the command is usually needed.
    * @param command
    */
-  public void sendCommand(Consumer<PigpioInterface> command) {
-    m_commandQueue.add(command);
+  public void sendCommand(Runnable command) {
+    command.run();
+    //m_commandQueue.add(command);
   }
 
   private void enabledInit() {

@@ -1,40 +1,35 @@
 package frc.lib.robopilink;
 
-import java.util.Optional;
 import java.util.OptionalDouble;
 
+import com.diozero.api.ServoDevice;
+
 public class RPLOutputServo implements PigpiojDevice {
-    String variableName;
-    RoboPiLink pythonInterface;
-    int port;
-    OptionalDouble commandedValue = OptionalDouble.of(0.0);
-    OptionalDouble lastSentValue = OptionalDouble.of(0.0);
+    private RoboPiLink pythonInterface;
+    private int port;
+    private OptionalDouble commandedValue = OptionalDouble.of(0.0);
+    private OptionalDouble lastSentValue = OptionalDouble.of(0.0);
+    private ServoDevice i;
 
     public RPLOutputServo(RoboPiLink pythonInterface, int port) {
         this.port = port;
         this.pythonInterface = pythonInterface;
-        this.variableName = "SERVO" + port;
 
         if (pythonInterface.isPortTaken(port)) {
             throw new RuntimeException("port " + port + " is already in use on RPi");
         }
-        
-        pythonInterface.sendCommand(
-            variableName + " = gpiozero.Servo(" + port + ", pin_factory=factory)\n" +
-            variableName + ".value = None\n"
-        );
+
+        i = new ServoDevice.Builder(port).setInitialPulseWidthUs(0).setFrequency(50).build();
 
         pythonInterface.registerDevice(this);
-
-        pythonInterface.block();
     }
 
-    public Optional<String> getDisabledInit() {
+    public Runnable getDisabledInit() {
         return getSendValueString(OptionalDouble.empty());
     }
 
-    public Optional<String> getEnabledPeriodic() {
-        if (lastSentValue.equals(commandedValue)) return Optional.empty();
+    public Runnable getEnabledPeriodic() {
+        if (lastSentValue.equals(commandedValue)) return () -> {};
         return getSendValueString(commandedValue);
     }
 
@@ -50,12 +45,14 @@ public class RPLOutputServo implements PigpiojDevice {
         return port;
     }
 
-    private Optional<String> getSendValueString(OptionalDouble value) {
+    private Runnable getSendValueString(OptionalDouble value) {
         lastSentValue = value;
         if (value.isPresent()) {
-            return Optional.of(variableName + ".value = " + value.getAsDouble());
+            // convert to microseconds
+            double properOutput = value.getAsDouble() * 500 + 1500;
+            return () -> i.setPulseWidthUs((int) properOutput);
         } else {
-            return Optional.of(variableName + ".value = None");
+            return () -> i.setPulseWidthUs(0);
         }
     }
 }

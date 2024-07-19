@@ -6,11 +6,14 @@ import uk.pigpioj.PigpioInterface;
 
 import java.util.function.Consumer;
 
-public class RPLOutputDigital implements PigpiojDevice{
+import com.diozero.api.DigitalOutputDevice;
+
+public class RPLOutputDigital implements PigpiojDevice {
     private RoboPiLink pythonInterface;
     private int port;
     private boolean commandedValue = false;
     private boolean lastSentValue = false;
+    private DigitalOutputDevice i;
 
     public RPLOutputDigital(RoboPiLink pythonInterface, int port) {
         this.port = port;
@@ -20,22 +23,19 @@ public class RPLOutputDigital implements PigpiojDevice{
             throw new RuntimeException("port " + port + " is already in use on RPi");
         }
 
-        pythonInterface.sendCommand((i) -> {
-            i.setMode(port, PigpioConstants.MODE_PI_OUTPUT);
-            i.write(port, false);
-        });
+        i = new DigitalOutputDevice(port);
+
+        i.setValue(false);
 
         pythonInterface.registerDevice(this);
-
-        pythonInterface.block();
     }
 
-    public Consumer<PigpioInterface> getDisabledInit() {
+    public Runnable getDisabledInit() {
         return getSendValueString(false);
     }
 
-    public Consumer<PigpioInterface> getEnabledPeriodic() {
-        if (lastSentValue == commandedValue) return (i) -> {};
+    public Runnable getEnabledPeriodic() {
+        if (lastSentValue == commandedValue) return () -> {};
         return getSendValueString(commandedValue);
     }
 
@@ -59,10 +59,10 @@ public class RPLOutputDigital implements PigpiojDevice{
         return lastSentValue;
     }
 
-    private Consumer<PigpioInterface> getSendValueString(boolean value) {
+    private Runnable getSendValueString(boolean value) {
         lastSentValue = value;
-        return (i) -> {
-            i.write(port, value);
+        return () -> {
+            i.setValue(value);
         };
     }
 }

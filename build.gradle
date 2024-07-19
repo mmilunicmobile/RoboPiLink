@@ -53,8 +53,7 @@ dependencies {
     implementation wpi.java.deps.wpilib()
     implementation wpi.java.vendor.java()
 
-    // https://mvnrepository.com/artifact/io.netty/netty-all
-    implementation group: 'io.netty', name: 'netty-all', version: '4.1.111.Final'
+    implementation 'com.diozero:diozero-distribution:1.4.0'
 
     roborioDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.roborio)
     roborioDebug wpi.java.vendor.jniDebug(wpi.platforms.roborio)
