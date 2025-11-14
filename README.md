@@ -1,5 +1,7 @@
 # RoboPiLink
 
+I built this project to make practical use of the surplus Raspberry Pi 1 boards available in my high school robotics team. The goal was to create a lightweight platform for teaching FRC-style robot programming without requiring a full FRC control system. Instead of deploying code directly to the Raspberry Pi, this system runs the user’s program locally and streams commands to the Pi in real time. This design makes setup dramatically simpler—no traditional deployment pipeline required—while still letting students write and test robot-like control code.
+
 [Skip to the How To Use!](#how-to-use)
 
 This is a base WPILib project that can interface with **any** Raspberry Pi over a network connection!
